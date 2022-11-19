@@ -1,0 +1,2 @@
+﻿11. The current method is blocking because it does not make use of "await" or "async" functionality. This means a coroutine cannot be run.
+12. As long as the same models are being used, the migrated documents should be portable because they are stored as a plain dictionary

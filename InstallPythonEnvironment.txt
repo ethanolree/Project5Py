@@ -1,0 +1,16 @@
+List of steps for setup with python 3.8 (for compatibility with Turi) (used Rosetta terminal, see here: “Open Finder and go to "Applications", then "Utilities". Make a copy of the "Terminal". Call your copy something like "Rosetta Terminal". Right click on it and select "Get Info". Click the checkbox which says "Open using Rosetta". Launch your Rosetta Terminal and install TuriCreate like you normally would.”
+
+conda create -n "python38env" python=3.8
+conda activate python38env
+python3 -m pip install --upgrade pip
+pip3 install numpy   
+pip3 install pandas 
+pip3 install matplotlib  
+pip3 install scikit-learn
+pip3 install seaborn 
+pip3 install jupyter 
+pip3 install coremltools
+pip3 install turicreate
+pip3 install pymongo==4.3.2
+
+
