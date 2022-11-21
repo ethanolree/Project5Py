@@ -15,6 +15,7 @@ import pickle
 from bson.binary import Binary
 import json
 import numpy as np
+import base64
 
 class PrintHandlers(BaseHandler):
     def get(self):
@@ -31,7 +32,7 @@ class UploadLabeledDatapointHandler(BaseHandler):
         data = json.loads(self.request.body.decode("utf-8"))
 
         vals = data['feature']
-        fvals = [float(val) for val in vals]
+        fvals = vals
         label = data['label']
         sess  = data['dsid']
 
@@ -62,13 +63,14 @@ class UpdateModelForDatasetId(BaseHandler):
         dsid = self.get_int_arg("dsid",default=0)
 
         data = self.get_features_and_labels_as_SFrame(dsid)
+        print(data)
 
         # fit the model to the data
         acc = -1
         best_model = 'unknown'
         if len(data)>0:
             
-            model = tc.classifier.create(data,target='target',verbose=0)# training
+            model = tc.image_classifier.create(data,target='target',solver='fista')# training
             yhat = model.predict(data)
             self.clf.update({dsid: model})
             acc = sum(yhat==data['target'])/float(len(data))
@@ -84,12 +86,27 @@ class UpdateModelForDatasetId(BaseHandler):
         # create feature vectors from database
         features=[]
         labels=[]
-        for a in self.db.labeledinstances.find({"dsid":dsid}): 
-            features.append([float(val) for val in a['feature']])
+        targets=[]
+        for i, a in enumerate(self.db.labeledinstances.find({"dsid":dsid})):
+            image_64_decode = base64.b64decode(a['feature'])
+            filename = "temp/%s%s.jpeg"%(a['label'],i)
+            image_result = open(filename, 'wb') # create a writable image and write the decoding result
+            image_result.write(image_64_decode)
             labels.append(a['label'])
 
+        data = tc.image_analysis.load_images('./temp', with_path=True)
+        unique_labels = set(labels)
+        for path in data['path']:
+            for l in unique_labels:
+                if l in path:
+                    targets.append(l)
+                    break;
+
+        data['target'] = targets
+
         # convert to dictionary for tc
-        data = {'target':labels, 'sequence':np.array(features)}
+        # data = {'target':labels, 'sequence':features}
+        print(data)
 
         # send back the SFrame of the data
         return tc.SFrame(data=data)
@@ -123,10 +140,10 @@ class PredictOneFromDatasetId(BaseHandler):
         # create feature vectors from array input
         # convert to dictionary of arrays for tc
 
-        tmp = [float(val) for val in vals]
-        tmp = np.array(tmp)
-        tmp = tmp.reshape((1,-1))
-        data = {'sequence':tmp}
+        image_64_decode = base64.b64decode(vals)
+        filename = "guess/guess.jpeg"
+        image_result = open(filename, 'wb') # create a writable image and write the decoding result
+        image_result.write(image_64_decode)
 
         # send back the SFrame of the data
-        return tc.SFrame(data=data)
+        return tc.image_analysis.load_images('./guess', with_path=True)
