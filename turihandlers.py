@@ -57,20 +57,25 @@ class RequestNewDatasetId(BaseHandler):
         self.write_json({"dsid":newSessionId})
 
 class UpdateModelForDatasetId(BaseHandler):
-    def get(self):
+    def post(self):
         '''Train a new model (or update) for given dataset ID
         '''
+        request = json.loads(self.request.body.decode("utf-8"))
+
+        solver = request['solver']
+        convergenceThreshold = request['convergenceThreshold']
+        rescaling = request['rescaling']
+
         dsid = self.get_int_arg("dsid",default=0)
 
         data = self.get_features_and_labels_as_SFrame(dsid)
-        print(data)
 
         # fit the model to the data
         acc = -1
         best_model = 'unknown'
         if len(data)>0:
             
-            model = tc.image_classifier.create(data,target='target',solver='fista')# training
+            model = tc.image_classifier.create(data,target='target',solver=solver,convergence_threshold=convergenceThreshold,feature_rescaling=rescaling)# training
             yhat = model.predict(data)
             self.clf.update({dsid: model})
             acc = sum(yhat==data['target'])/float(len(data))
